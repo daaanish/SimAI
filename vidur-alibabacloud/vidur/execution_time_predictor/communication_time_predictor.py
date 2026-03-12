@@ -51,6 +51,9 @@ class TPTimePredictor:
         
         # self.workload_path = '/disk2/futianhao/software3/sim-ai-inference-n/simulator_output/tmp_simai_workload'
         self.cache: Dict[int, float] = {}
+        # 记录 SimAI 无法处理的通信规模，避免重复尝试和重复打印日志
+        # Track communication sizes that SimAI cannot handle, to avoid repeated attempts and log noise
+        self.failed_cache_keys: set = set()
 
     def _interpolate_from_cache(self, all_reduce_bytes: int):
         """
@@ -104,12 +107,16 @@ class TPTimePredictor:
         
         # 如果结果已经在缓存中，直接返回
         # If result is already in cache, return directly
-        
         if cache_key in self.cache:
             return (self.cache[cache_key]
                 + self.predictor_config.nccl_cpu_launch_overhead_ms
                 + self.predictor_config.nccl_cpu_skew_overhead_per_device_ms
                 * self.replica_config.tensor_parallel_size**1.25)
+        
+        # 如果该规模已知 SimAI 无法处理，直接 fallback
+        # If this size is already known to fail in SimAI, fall back immediately
+        if cache_key in self.failed_cache_keys:
+            return -1
         
         # 为workload和命令生成唯一标识符
         # 基于WorkItem的所有相关参数生成哈希值
@@ -181,13 +188,11 @@ class TPTimePredictor:
                 # Try to interpolate from cache: find the nearest known size and scale proportionally
                 latency = self._interpolate_from_cache(all_reduce_bytes)
                 if latency is not None:
-                    print(f'Warning: all_reduce_bytes: {all_reduce_bytes} not supported by simai, '
-                          f'interpolated latency from cache: {latency:.6f} ms')
                     self.cache[cache_key] = latency
                 else:
-                    print(f'Warning: all_reduce_bytes: {all_reduce_bytes} not supported by simai, '
-                          f'falling back to sklearn predictor')
-                    # fallback to sklearn_execution_time_predictor
+                    # 记录该规模为已知失败，后续请求直接 fallback 到 sklearn，不再尝试 SimAI
+                    # Mark this size as known-failing; future requests fall back to sklearn silently
+                    self.failed_cache_keys.add(cache_key)
                     return -1
                 return (self.cache[cache_key]
                     + self.predictor_config.nccl_cpu_launch_overhead_ms
@@ -204,12 +209,11 @@ class TPTimePredictor:
                 # Result file is empty, try to interpolate from cache
                 latency = self._interpolate_from_cache(all_reduce_bytes)
                 if latency is not None:
-                    print(f'Warning: all_reduce_bytes: {all_reduce_bytes} produced empty result in simai, '
-                          f'interpolated latency from cache: {latency:.6f} ms')
                     self.cache[cache_key] = latency
                 else:
-                    print(f'Warning: all_reduce_bytes: {all_reduce_bytes} produced empty result in simai, '
-                          f'falling back to sklearn predictor')
+                    # 记录该规模为已知失败，后续请求直接 fallback 到 sklearn，不再尝试 SimAI
+                    # Mark this size as known-failing; future requests fall back to sklearn silently
+                    self.failed_cache_keys.add(cache_key)
                     return -1
                 return (self.cache[cache_key]
                     + self.predictor_config.nccl_cpu_launch_overhead_ms
@@ -258,6 +262,11 @@ class TPTimePredictor:
                 + self.predictor_config.nccl_cpu_launch_overhead_ms
                 + self.predictor_config.nccl_cpu_skew_overhead_per_device_ms
                 * self.replica_config.tensor_parallel_size**1.25)
+        
+        # 如果该规模已知 SimAI 无法处理，直接 fallback
+        # If this size is already known to fail in SimAI, fall back immediately
+        if cache_key in self.failed_cache_keys:
+            return -1
         
         
         # 为workload和命令生成唯一标识符
@@ -342,13 +351,11 @@ class TPTimePredictor:
                 # Try to interpolate from cache: find the nearest known size and scale proportionally
                 latency = self._interpolate_from_cache(all_reduce_bytes)
                 if latency is not None:
-                    print(f'Warning: all_reduce_bytes: {all_reduce_bytes} not supported by simai analytical, '
-                          f'interpolated latency from cache: {latency:.6f} ms')
                     self.cache[cache_key] = latency
                 else:
-                    print(f'Warning: all_reduce_bytes: {all_reduce_bytes} not supported by simai analytical, '
-                          f'falling back to sklearn predictor')
-                    # fallback to sklearn_execution_time_predictor
+                    # 记录该规模为已知失败，后续请求直接 fallback 到 sklearn，不再尝试 SimAI
+                    # Mark this size as known-failing; future requests fall back to sklearn silently
+                    self.failed_cache_keys.add(cache_key)
                     return -1
                 return (self.cache[cache_key]
                     + self.predictor_config.nccl_cpu_launch_overhead_ms
@@ -365,12 +372,11 @@ class TPTimePredictor:
                 # Result file is empty, try to interpolate from cache
                 latency = self._interpolate_from_cache(all_reduce_bytes)
                 if latency is not None:
-                    print(f'Warning: all_reduce_bytes: {all_reduce_bytes} produced empty result in simai analytical, '
-                          f'interpolated latency from cache: {latency:.6f} ms')
                     self.cache[cache_key] = latency
                 else:
-                    print(f'Warning: all_reduce_bytes: {all_reduce_bytes} produced empty result in simai analytical, '
-                          f'falling back to sklearn predictor')
+                    # 记录该规模为已知失败，后续请求直接 fallback 到 sklearn，不再尝试 SimAI
+                    # Mark this size as known-failing; future requests fall back to sklearn silently
+                    self.failed_cache_keys.add(cache_key)
                     return -1
                 return (self.cache[cache_key]
                     + self.predictor_config.nccl_cpu_launch_overhead_ms
