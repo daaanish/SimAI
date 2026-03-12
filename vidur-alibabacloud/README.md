@@ -125,6 +125,8 @@ python -m vidur.main \
 
 > ✅ Full parameter descriptions are available via `python -m vidur.main -h`.
 >
+> ⚠️ The trace-based examples require Vidur sample data. Download the `data` directory from https://github.com/microsoft/vidur/tree/main/data and copy it to `/vidur-alibabacloud/data` before running commands that reference `./data/processed_traces/splitwise_conv.csv`.
+>
 
 
 
@@ -350,4 +352,3 @@ python -m vidur.main -h
 ```
 
 ---
-
