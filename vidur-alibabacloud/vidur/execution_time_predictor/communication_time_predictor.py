@@ -52,6 +52,44 @@ class TPTimePredictor:
         # self.workload_path = '/disk2/futianhao/software3/sim-ai-inference-n/simulator_output/tmp_simai_workload'
         self.cache: Dict[int, float] = {}
 
+    def _interpolate_from_cache(self, all_reduce_bytes: int):
+        """
+        当 SimAI 不支持某一通信规模时，从缓存中插值估算延迟。
+        策略：找到缓存中最近的通信规模，按比例线性缩放。
+        
+        When SimAI does not support a communication size, estimate latency by
+        interpolating from cached results. Strategy: find the nearest cached size
+        and scale the latency proportionally (linear scaling).
+        
+        Returns the estimated latency in ms, or None if cache is empty.
+        """
+        if not self.cache:
+            return None
+        
+        # 缓存key为(hidden_size, num_tokens, tensor_size)，对应all_reduce_bytes = hidden_size * num_tokens * tensor_size
+        # Cache key is (hidden_size, num_tokens, tensor_size), corresponding to
+        # all_reduce_bytes = hidden_size * num_tokens * tensor_size
+        cached_bytes = {
+            k[0] * k[1] * k[2]: v
+            for k, v in self.cache.items()
+            if k[0] * k[1] * k[2] > 0
+        }
+        
+        if not cached_bytes:
+            return None
+        
+        # 找到最近的已知通信规模
+        # Find the nearest known communication size
+        nearest_bytes = min(cached_bytes.keys(), key=lambda x: abs(x - all_reduce_bytes))
+        nearest_latency = cached_bytes[nearest_bytes]
+        
+        if nearest_latency <= 0:
+            return None
+        
+        # 按比例线性缩放
+        # Scale proportionally (linear approximation)
+        estimated_latency = nearest_latency * (all_reduce_bytes / nearest_bytes)
+        return estimated_latency
 
     # > 重写 增加两个功能 复用相同的workload 和 相同command的结果
     # > rewrite: add two features to reuse same workloads and results of same commands
@@ -139,20 +177,44 @@ class TPTimePredictor:
             if os.path.exists(original_result_file):
                 os.rename(original_result_file, result_file)
             else:
-                print(f'Error: all_reduce_bytes: {all_reduce_bytes} not allowed by simai')
-                # fallback to sklearn_execution_time_predictor
-                return -1
+                # 尝试从缓存中插值：找到最近的已知通信规模并按比例缩放
+                # Try to interpolate from cache: find the nearest known size and scale proportionally
+                latency = self._interpolate_from_cache(all_reduce_bytes)
+                if latency is not None:
+                    print(f'Warning: all_reduce_bytes: {all_reduce_bytes} not supported by simai, '
+                          f'interpolated latency from cache: {latency:.6f} ms')
+                    self.cache[cache_key] = latency
+                else:
+                    print(f'Warning: all_reduce_bytes: {all_reduce_bytes} not supported by simai, '
+                          f'falling back to sklearn predictor')
+                    # fallback to sklearn_execution_time_predictor
+                    return -1
+                return (self.cache[cache_key]
+                    + self.predictor_config.nccl_cpu_launch_overhead_ms
+                    + self.predictor_config.nccl_cpu_skew_overhead_per_device_ms
+                    * self.replica_config.tensor_parallel_size**1.25)
         
         # 从结果文件获取allreduce latency
         # Get allreduce latency from result file
         with open(result_file, mode='r', encoding='utf-8') as file:
             reader = csv.reader(file)
             rows = list(reader)
-            # TODO: chentong fix this
-            if len(rows) == 0: 
-                print(f'Error: all_reduce_bytes: {all_reduce_bytes} not allowed by simai')
-                # fallback to sklearn_execution_time_predictor
-                return -1
+            if len(rows) == 0:
+                # 结果文件为空，尝试从缓存插值
+                # Result file is empty, try to interpolate from cache
+                latency = self._interpolate_from_cache(all_reduce_bytes)
+                if latency is not None:
+                    print(f'Warning: all_reduce_bytes: {all_reduce_bytes} produced empty result in simai, '
+                          f'interpolated latency from cache: {latency:.6f} ms')
+                    self.cache[cache_key] = latency
+                else:
+                    print(f'Warning: all_reduce_bytes: {all_reduce_bytes} produced empty result in simai, '
+                          f'falling back to sklearn predictor')
+                    return -1
+                return (self.cache[cache_key]
+                    + self.predictor_config.nccl_cpu_launch_overhead_ms
+                    + self.predictor_config.nccl_cpu_skew_overhead_per_device_ms
+                    * self.replica_config.tensor_parallel_size**1.25)
             
             # 最后一行第二列为total comm
             # simai返回us，vidur要求ms
@@ -276,36 +338,48 @@ class TPTimePredictor:
             if os.path.exists(original_result_file):
                 os.rename(original_result_file, result_file)
             else:
-                print(f'Error: all_reduce_bytes: {all_reduce_bytes} not allowed by simai')
-                # fallback to sklearn_execution_time_predictor
-                return -1
+                # 尝试从缓存中插值：找到最近的已知通信规模并按比例缩放
+                # Try to interpolate from cache: find the nearest known size and scale proportionally
+                latency = self._interpolate_from_cache(all_reduce_bytes)
+                if latency is not None:
+                    print(f'Warning: all_reduce_bytes: {all_reduce_bytes} not supported by simai analytical, '
+                          f'interpolated latency from cache: {latency:.6f} ms')
+                    self.cache[cache_key] = latency
+                else:
+                    print(f'Warning: all_reduce_bytes: {all_reduce_bytes} not supported by simai analytical, '
+                          f'falling back to sklearn predictor')
+                    # fallback to sklearn_execution_time_predictor
+                    return -1
+                return (self.cache[cache_key]
+                    + self.predictor_config.nccl_cpu_launch_overhead_ms
+                    + self.predictor_config.nccl_cpu_skew_overhead_per_device_ms
+                    * self.replica_config.tensor_parallel_size**1.25)
         
         # 从结果文件获取allreduce latency
         # Get allreduce latency from result file
         with open(result_file, mode='r', encoding='utf-8') as file:
             reader = csv.reader(file)
             rows = list(reader)
-            # TODO: chentong fix this
-            if len(rows) == 0: 
-                print(f'Error: all_reduce_bytes: {all_reduce_bytes} not allowed by simai')
-                # fallback to sklearn_execution_time_predictor
-                return -1
-            
-            # 最后一行第二列为total comm
-            # simai返回us，vidur要求ms
-            # Second column of last row is total comm
-            # simai returns us, vidur requires ms
-            # latency = float(rows[-1][1]) * 1e-3
+            if len(rows) == 0:
+                # 结果文件为空，尝试从缓存插值
+                # Result file is empty, try to interpolate from cache
+                latency = self._interpolate_from_cache(all_reduce_bytes)
+                if latency is not None:
+                    print(f'Warning: all_reduce_bytes: {all_reduce_bytes} produced empty result in simai analytical, '
+                          f'interpolated latency from cache: {latency:.6f} ms')
+                    self.cache[cache_key] = latency
+                else:
+                    print(f'Warning: all_reduce_bytes: {all_reduce_bytes} produced empty result in simai analytical, '
+                          f'falling back to sklearn predictor')
+                    return -1
+                return (self.cache[cache_key]
+                    + self.predictor_config.nccl_cpu_launch_overhead_ms
+                    + self.predictor_config.nccl_cpu_skew_overhead_per_device_ms
+                    * self.replica_config.tensor_parallel_size**1.25)
             
             # 从索引5的位置获取延迟数据（微秒），转换为毫秒
             # Get latency data from index 5 position (microseconds), convert to milliseconds
-            latency = float(rows[-1][5]) * 1e-3  
-            
-            # TODO: > 量太小有可能tp通信量是零， 比如 通信量为65535的时候， 就是0
-            # 通信量为3276800的时候， laytency=0.015ms
-            # TODO: > Amount may be too small for tp communication to be zero, e.g. when communication amount is 65535, it's 0
-            # When communication amount is 3276800, latency=0.015ms
-            # assert all_reduce_bytes>0 and latency > 0, f"> Debug: all_reduce_bytes={all_reduce_bytes} latency={latency} need to be >=0"
+            latency = float(rows[-1][5]) * 1e-3
             
             # 将结果存入缓存，以便后续相同参数的请求直接使用
             # Store result in cache for future requests with same parameters
