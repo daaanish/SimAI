@@ -247,6 +247,15 @@ python3 ./astra-sim-alibabacloud/inputs/topo/gen_Topo_Template.py -g 32 -bw 200G
 $ AS_SEND_LAT=3 AS_NVLS_ENABLE=1 ./bin/SimAI_simulator -t 16 -w ./example/microAllReduce.txt -n  ./Spectrum-X_8g_8gps_400Gbps_H100  -c astra-sim-alibabacloud/inputs/config/SimAI.conf
 ```
 
+### Run ns-3 module tests
+
+`ns-3-alibabacloud` module tests use ns-3's `test.py` / `test-runner`.
+For the point-to-point test, the suite name is `devices-point-to-point`.
+
+```bash
+$ ./scripts/build.sh -t ns3 devices-point-to-point
+```
+
 | Environment Variable Name | Description                      | Default Value                             |
 |---------------------------|----------------------------------|-------------------------------------------|
 | `AS_LOG_LEVEL`            | Log level                        | `DEBUG`, `INFO`, `WARNING`, `ERROR`, `UNKNOWN`; default is `INFO` |

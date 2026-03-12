@@ -46,6 +46,37 @@ function compile {
     esac
 }
 
+function run_test {
+    local option="$1"
+    local suite="$2"
+    case "$option" in
+    "ns3")
+        if [ ! -d "${NS3_DIR:?}/simulation" ]; then
+            printf -- "ns-3-alibabacloud submodule is not initialized. Run: git submodule update --init --recursive\n"
+            return 1
+        fi
+        if [ -z "${suite}" ]; then
+            printf -- "missing ns-3 test suite name\n"
+            printf -- "example: ./scripts/build.sh -t ns3 devices-point-to-point\n"
+            return 1
+        fi
+        if [ "${suite}" = "point-to-point" ]; then
+            printf -- "Using ns-3 suite name 'devices-point-to-point' for point-to-point module tests.\n"
+            suite="devices-point-to-point"
+        fi
+        cd "${NS3_DIR:?}"/simulation || return 1
+        ./ns3 configure --enable-tests --disable-examples || return 1
+        ./ns3 build || return 1
+        if ! ./ns3 run "test-runner --print-test-name-list" | grep -Fx "${suite}" >/dev/null; then
+            printf -- "Unknown ns-3 test suite: %s\n" "${suite}"
+            printf -- "Use './ns3 run \"test-runner --print-test-name-list\"' to list available suites.\n"
+            return 1
+        fi
+        python3 ./test.py --no-build -s "${suite}" || return 1
+        ;;
+    esac
+}
+
 function cleanup_build {
     local option="$1"
     case "$option" in
@@ -77,9 +108,12 @@ case "$1" in
     cleanup_build "$2";;
 -c|--compile)
     compile "$2";;
+-t|--test)
+    run_test "$2" "$3";;
 -h|--help|*)
     printf -- "help message\n"
     printf -- "-c|--compile mode supported ns3/phy/analytical  (example:./build.sh -c ns3)\n"
     printf -- "-l|--clean  (example:./build.sh -l ns3)\n"
+    printf -- "-t|--test mode supported ns3 with suite name (example:./build.sh -t ns3 devices-point-to-point)\n"
     printf -- "-lr|--clean-result mode  (example:./build.sh -lr ns3)\n"
 esac

@@ -178,6 +178,29 @@ $ python3 ./astra-sim-alibabacloud/inputs/topo/gen_Topo_Template.py -topo Spectr
 $ AS_SEND_LAT=3 AS_NVLS_ENABLE=1 ./bin/SimAI_simulator -t 16 -w ./example/microAllReduce.txt -n ./Spectrum-X_128g_8gps_100Gbps_A100 -c astra-sim-alibabacloud/inputs/config/SimAI.conf
 ```
 
+### Run ns-3 module tests
+
+The `ns-3-alibabacloud` module tests are managed by ns-3's `test.py` / `test-runner`, not by `ctest`.
+For the point-to-point module, use the suite name `devices-point-to-point`.
+
+```bash
+# Make sure submodules are initialized
+$ git submodule update --init --recursive
+
+# Run the point-to-point ns-3 module test
+$ ./scripts/build.sh -t ns3 devices-point-to-point
+```
+
+If you run the test from the ns-3 workspace directly, use:
+
+```bash
+$ cd ./ns-3-alibabacloud/simulation
+$ ./ns3 configure --enable-tests --disable-examples
+$ ./ns3 build
+$ ./ns3 run "test-runner --print-test-name-list"
+$ python3 ./test.py --no-build -s devices-point-to-point
+```
+
 ## Use Multi-requests Inference Simulation
 
 For detailed information, please refer to the [README](./vidur-alibabacloud/README.md) file in the `vidur-alibabacloud` directory. This module leverages AICB to profile the computation time of **inference** workloads. Due to its reliance on specific hardware-accelerated libraries like DeepGEMM and FlashMLA, it is exclusively compatible with NVIDIA GPUs based on the **Hopper (SM90)** and **Blackwell (SM100)** architectures.
