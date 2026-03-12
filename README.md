@@ -156,6 +156,33 @@ $ ./scripts/build.sh -c analytical
 $ ./scripts/build.sh -c ns3
 ```
 
+### Run the ns-3 point-to-point module test
+
+If you want to run the ns-3 test under `ns-3-alibabacloud/simulation/src/point-to-point/test/`, make sure the submodule is present first:
+
+```bash
+$ git submodule update --init --recursive
+```
+
+Then configure and build ns-3 with tests enabled from the `simulation` directory:
+
+```bash
+$ cd ./ns-3-alibabacloud/simulation
+$ ./ns3 configure --enable-tests
+$ ./ns3 build
+```
+
+The point-to-point test is registered as the ns-3 **test suite** `devices-point-to-point`, so the recommended way to run it is:
+
+```bash
+$ python3 ./test.py -n -b build -s devices-point-to-point
+```
+
+Notes:
+
+- `ctest --test-dir build -N` only lists CTest executable entries. It does **not** enumerate ns-3 module `TestSuite` libraries such as `devices-point-to-point`, so `ctest -R point-to-point` returning no matches is expected.
+- This repository is validated primarily on **Ubuntu 20.04 + GCC/G++ 9.4.0**. Other toolchains may expose additional upstream ns-3-alibabacloud build issues outside the point-to-point test itself.
+
 ## Use SimAI-Analytical
 
 ```bash
@@ -181,6 +208,8 @@ $ AS_SEND_LAT=3 AS_NVLS_ENABLE=1 ./bin/SimAI_simulator -t 16 -w ./example/microA
 ## Use Multi-requests Inference Simulation
 
 For detailed information, please refer to the [README](./vidur-alibabacloud/README.md) file in the `vidur-alibabacloud` directory. This module leverages AICB to profile the computation time of **inference** workloads. Due to its reliance on specific hardware-accelerated libraries like DeepGEMM and FlashMLA, it is exclusively compatible with NVIDIA GPUs based on the **Hopper (SM90)** and **Blackwell (SM100)** architectures.
+
+Before running the Vidur-based inference examples, download the data files from <https://github.com/microsoft/vidur/tree/main/data> and copy them into `./vidur-alibabacloud/data`.
 
 ```shell
 # Build from Dockerfile

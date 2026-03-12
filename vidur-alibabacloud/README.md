@@ -64,6 +64,15 @@ pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/
 pip install -r requirements-dev.txt -i https://mirrors.aliyun.com/pypi/simple/
 ```
 
+### 5. Prepare the trace data
+Download the data directory from the upstream Vidur repository and copy it into this repository before running the trace-based examples:
+
+```bash
+cp -r <path-to-downloaded-vidur-data> ./data
+```
+
+The upstream data source is: <https://github.com/microsoft/vidur/tree/main/data>
+
 ---
 
 ## ▶️ Running Example
@@ -350,4 +359,3 @@ python -m vidur.main -h
 ```
 
 ---
-
