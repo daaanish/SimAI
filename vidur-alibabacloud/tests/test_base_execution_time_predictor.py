@@ -2,8 +2,11 @@ import unittest
 from pathlib import Path
 
 
-BASE_EXECUTION_TIME_PREDICTOR = Path(
-    "/home/runner/work/SimAI/SimAI/vidur-alibabacloud/vidur/execution_time_predictor/base_execution_time_predictor.py"
+BASE_EXECUTION_TIME_PREDICTOR = (
+    Path(__file__).resolve().parents[1]
+    / "vidur"
+    / "execution_time_predictor"
+    / "base_execution_time_predictor.py"
 )
 
 

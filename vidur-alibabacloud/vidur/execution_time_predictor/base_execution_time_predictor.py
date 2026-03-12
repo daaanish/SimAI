@@ -70,7 +70,7 @@ class BaseExecutionTimePredictor(ABC):
                 # fy：有可能跑出来结果是-1
                 # fy: Result may be -1
                 assert tensor_parallel_communication_time >= 0, "> Debug: tensor_parallel_communication_time must be greater than 0"
-                     
+
             # elif self._config.simai_analytical_enable:
             elif self._config.backend == "simai_analytical":
                 tensor_parallel_communication_time = self._tp_time_predictor.get_execution_time_by_simai_analytical(batch)
