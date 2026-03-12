@@ -49,6 +49,7 @@ function compile {
 function run_test {
     local option="$1"
     local suite="$2"
+    local available_suites
     case "$option" in
     "ns3")
         if [ ! -d "${NS3_DIR:?}/simulation" ]; then
@@ -61,14 +62,17 @@ function run_test {
             return 1
         fi
         if [ "${suite}" = "point-to-point" ]; then
-            printf -- "Using ns-3 suite name 'devices-point-to-point' for point-to-point module tests.\n"
-            suite="devices-point-to-point"
+            printf -- "point-to-point module tests use the ns-3 suite name 'devices-point-to-point'.\n"
         fi
         cd "${NS3_DIR:?}"/simulation || return 1
         ./ns3 configure --enable-tests --disable-examples || return 1
         ./ns3 build || return 1
-        if ! ./ns3 run "test-runner --print-test-name-list" | grep -Fx "${suite}" >/dev/null; then
+        available_suites=$(./ns3 run "test-runner --print-test-name-list") || return 1
+        if ! printf -- "%s\n" "${available_suites}" | grep -Fx -- "${suite}" >/dev/null; then
             printf -- "Unknown ns-3 test suite: %s\n" "${suite}"
+            if [ "${suite}" = "point-to-point" ]; then
+                printf -- "Use 'devices-point-to-point' for point-to-point module tests.\n"
+            fi
             printf -- "Use './ns3 run \"test-runner --print-test-name-list\"' to list available suites.\n"
             return 1
         fi
