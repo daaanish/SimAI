@@ -84,7 +84,7 @@ function run_tests {
         ./ns3 build || return 1
         python3 test.py --suite="$suite";;
     *)
-        printf -- "test mode supported ns3 only  (example:./build.sh -t ns3 devices-point-to-point)\n" >&2
+        printf -- "test mode supported ns3 only (example:./build.sh -t ns3 devices-point-to-point)\n" >&2
         return 1;;
     esac
 }

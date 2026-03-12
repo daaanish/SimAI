@@ -184,7 +184,7 @@ To build and run the `devices-point-to-point` ns-3 module test from the reposito
 $ ./scripts/build.sh -t ns3 devices-point-to-point
 ```
 
-This test is run through the ns-3 test framework (`test.py`/`test-runner`), so do not append the suite name to `./scripts/build.sh -c ns3 ...`, and it will not be listed by `ctest -R point-to-point`.
+This test is run through the ns-3 test framework (`test.py`/`test-runner`). Do not append the suite name to `./scripts/build.sh -c ns3 ...`; it will not be listed by `ctest -R point-to-point`.
 
 ## Use Multi-requests Inference Simulation
 
