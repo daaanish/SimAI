@@ -178,16 +178,13 @@ $ python3 ./astra-sim-alibabacloud/inputs/topo/gen_Topo_Template.py -topo Spectr
 $ AS_SEND_LAT=3 AS_NVLS_ENABLE=1 ./bin/SimAI_simulator -t 16 -w ./example/microAllReduce.txt -n ./Spectrum-X_128g_8gps_100Gbps_A100 -c astra-sim-alibabacloud/inputs/config/SimAI.conf
 ```
 
-To build and run ns-3 module tests, please enable tests in `ns-3-alibabacloud/simulation` first:
+To build and run the `devices-point-to-point` ns-3 module test from the repository root, use:
 
 ```bash
-$ cd ./ns-3-alibabacloud/simulation
-$ ./ns3 configure --enable-tests
-$ python3 test.py --list
-$ python3 test.py --suite=devices-point-to-point
+$ ./scripts/build.sh -t ns3 devices-point-to-point
 ```
 
-`devices-point-to-point` is run through the ns-3 test framework (`test.py`/`test-runner`), so it will not be listed by `ctest -R point-to-point`.
+This test is run through the ns-3 test framework (`test.py`/`test-runner`), so do not append the suite name to `./scripts/build.sh -c ns3 ...`, and it will not be listed by `ctest -R point-to-point`.
 
 ## Use Multi-requests Inference Simulation
 
