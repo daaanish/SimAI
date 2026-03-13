@@ -9,7 +9,17 @@ SOURCE_ANA_BIN_DIR="${SIMAI_DIR:?}"/build/simai_analytical/build/simai_analytica
 SOURCE_PHY_BIN_DIR="${SIMAI_DIR:?}"/build/simai_phy/build/simai_phynet/SimAI_phynet
 
 TARGET_BIN_DIR="${SCRIPT_DIR:?}"/../bin
-SIMAI_NS3_DIR="${SIMAI_DIR:?}"/extern/network_backend/ns3-interface/simulation
+SIMAI_NS3_DIR="${NS3_DIR:?}"/simulation
+
+function ensure_ns3_source {
+    if [ -d "${SIMAI_NS3_DIR:?}" ]; then
+        return 0
+    fi
+
+    cd "${ROOT_DIR:?}" || return 1
+    git submodule update --init --recursive ns-3-alibabacloud || return 1
+    [ -d "${SIMAI_NS3_DIR:?}" ]
+}
 
 function normalize_ns3_suite {
     local suite="$1"
@@ -74,15 +84,15 @@ function run_tests {
             printf -- "Example: ./scripts/build.sh -t ns3 devices-point-to-point\n" >&2
             return 1
         fi
-        if [ ! -d "${SIMAI_NS3_DIR:?}" ]; then
+        if ! ensure_ns3_source; then
             printf -- "ns-3 simulation directory not found: %s\n" "${SIMAI_NS3_DIR:?}" >&2
             return 1
         fi
         suite=$(normalize_ns3_suite "$suite")
         cd "${SIMAI_NS3_DIR:?}" || return 1
-        ./ns3 configure --enable-tests || return 1
+        ./ns3 configure --enable-tests --enable-modules=core,network,stats,point-to-point,test || return 1
         ./ns3 build || return 1
-        python3 test.py --suite="$suite";;
+        python3 test.py --suite="$suite" --no-build;;
     *)
         printf -- "test mode supported ns3 only (example:./build.sh -t ns3 devices-point-to-point)\n" >&2
         return 1;;
