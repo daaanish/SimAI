@@ -92,9 +92,9 @@ function run_tests {
         cd "${SIMAI_NS3_DIR:?}" || return 1
         ./ns3 configure --enable-tests --enable-modules=core,network,stats,point-to-point,test || return 1
         ./ns3 build || return 1
-        python3 test.py --suite="$suite" --no-build;;
+        python3 test.py --suite="$suite" --no-build || return 1;;
     *)
-        printf -- "test mode supported ns3 only (example:./build.sh -t ns3 devices-point-to-point)\n" >&2
+        printf -- "test mode supports ns3 only (example:./build.sh -t ns3 devices-point-to-point)\n" >&2
         return 1;;
     esac
 }
