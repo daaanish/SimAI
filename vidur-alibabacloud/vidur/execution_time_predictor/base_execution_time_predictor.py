@@ -61,8 +61,8 @@ class BaseExecutionTimePredictor(ABC):
             if self._config.backend == "simai_simulation":
                 tensor_parallel_communication_time = self._tp_time_predictor.get_execution_time(batch)
 
-                # >: 如果simai 后端返回-1，则调用vidur的查表方法
-                # >: If simai backend returns -1, call vidur's lookup table method 
+                # >: 如果simai 后端返回负值，则调用vidur的查表方法
+                # >: If simai backend returns a negative value, call vidur's lookup table method 
                 if tensor_parallel_communication_time < 0:
                     tensor_parallel_communication_time = self._get_tensor_parallel_communication_time(batch)
                 
@@ -72,8 +72,8 @@ class BaseExecutionTimePredictor(ABC):
             elif self._config.backend == "simai_analytical":
                 tensor_parallel_communication_time = self._tp_time_predictor.get_execution_time_by_simai_analytical(batch)
                 
-                # >：如果simai 后端返回-1，则调用vidur的查表方法
-                # >: If simai backend returns -1, call vidur's lookup table method 
+                # >：如果simai 后端返回负值，则调用vidur的查表方法
+                # >: If simai backend returns a negative value, call vidur's lookup table method 
                 if tensor_parallel_communication_time < 0:
                     tensor_parallel_communication_time = self._get_tensor_parallel_communication_time(batch)
                 
