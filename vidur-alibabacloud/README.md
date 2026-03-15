@@ -67,6 +67,15 @@ pip install -r requirements-dev.txt -i https://mirrors.aliyun.com/pypi/simple/
 ---
 
 ## ▶️ Running Example
+> ⚠️ Trace-based examples below depend on external Vidur data files. Download the required files from
+> `https://github.com/microsoft/vidur/tree/main/data` and copy them into
+> `/home/runner/work/SimAI/SimAI/vidur-alibabacloud/data` before using paths such as
+> `./data/processed_traces/splitwise_conv.csv`.
+>
+> ⚠️ When `simai_simulation` or `simai_analytical` cannot model a TP `all_reduce` size, Vidur falls back
+> to its sklearn/profile-based TP communication predictor. This fallback is an approximation and does not
+> guarantee identical latency to SimAI; the repository does not define a fixed error bound.
+
 ### Run <font style="color:rgb(13, 18, 57);">DeepSeek</font>-671B **<font style="color:rgb(13, 18, 57);">with</font>** AICB
 **<font style="color:rgb(238, 153, 0);">Requirements: </font>**<font style="color:rgb(0, 0, 0);">SimAI and AICB Docker environment (see </font><font style="color:rgb(154, 110, 58);background-color:rgba(255, 255, 255, 0.5);">[README](../README.md)</font><font style="color:rgb(0, 0, 0);"> for setup instructions). </font>
 
@@ -350,4 +359,3 @@ python -m vidur.main -h
 ```
 
 ---
-
