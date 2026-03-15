@@ -66,7 +66,7 @@ class BaseExecutionTimePredictor(ABC):
                 if tensor_parallel_communication_time < 0:
                     tensor_parallel_communication_time = self._get_tensor_parallel_communication_time(batch)
                 
-                assert tensor_parallel_communication_time >= 0, "> Debug: tensor_parallel_communication_time must be greater than 0"
+                assert tensor_parallel_communication_time >= 0, "> Debug: tensor_parallel_communication_time must be non-negative"
                     
             # elif self._config.simai_analytical_enable:
             elif self._config.backend == "simai_analytical":
@@ -77,7 +77,7 @@ class BaseExecutionTimePredictor(ABC):
                 if tensor_parallel_communication_time < 0:
                     tensor_parallel_communication_time = self._get_tensor_parallel_communication_time(batch)
                 
-                assert tensor_parallel_communication_time >= 0, "> Debug: tensor_parallel_communication_time must be greater than 0"
+                assert tensor_parallel_communication_time >= 0, "> Debug: tensor_parallel_communication_time must be non-negative"
             
             elif self._config.backend == "aicb":
                 # TODO currently not supported TP communication when using aicb
