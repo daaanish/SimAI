@@ -1,0 +1,7 @@
+MICRO model_parallel_NPU_group: 1 ep: 1 pp: 1 vpp: 1 ga: 1 all_gpus: 16
+5
+allreduce_1mb   -1  0  NONE  0  0  NONE  0  0  ALLREDUCE  1048576   0
+allreduce_2mb   -1  0  NONE  0  0  NONE  0  0  ALLREDUCE  2097152   0
+allreduce_4mb   -1  0  NONE  0  0  NONE  0  0  ALLREDUCE  4194304   0
+allreduce_8mb   -1  0  NONE  0  0  NONE  0  0  ALLREDUCE  8388608   0
+allreduce_16mb  -1  0  NONE  0  0  NONE  0  0  ALLREDUCE  16777216  0

@@ -233,8 +233,12 @@ void Workload::iterate_micro_benchmark() {
   assert(index < SIZE);
   if (current_state != LoopState::Wait_For_Sim_Finish) {
     for (pass_counter = 0; pass_counter < TOTAL_PASS; pass_counter++) {
-      layers[index]->issue_weight_grad_comm(
-          SchedulingPolicy::None, CollectiveBarrier::Non_Blocking);
+      for (int i = 0; i < SIZE; i++) {
+        layers[i]->issue_forward_pass_comm(
+            SchedulingPolicy::None, CollectiveBarrier::Non_Blocking);
+        layers[i]->issue_weight_grad_comm(
+            SchedulingPolicy::None, CollectiveBarrier::Non_Blocking);
+      }
     }
   }
   check_for_sim_end();
@@ -1083,10 +1087,13 @@ std::map<std::string, std::vector<bool>> Workload::decode_involved_dimensions(
     result["wg"] = all;
   } else if (
       policy == ParallelismPolicy::Data || policy == ParallelismPolicy::DLRM ||
-      policy == ParallelismPolicy::DLRMEnhanced ||
-      policy == ParallelismPolicy::MicroBenchmark) {
+      policy == ParallelismPolicy::DLRMEnhanced) {
     result["fwd"] = none;
     result["ig"] = none;
+    result["wg"] = all;
+  } else if (policy == ParallelismPolicy::MicroBenchmark) {
+    result["fwd"] = all;
+    result["ig"] = all;
     result["wg"] = all;
   } else if (
       policy == ParallelismPolicy::Model ||
@@ -1169,7 +1176,8 @@ bool Workload::initialize_workload(std::string name) {
   }
 
   if (parallelismPolicy == ParallelismPolicy::TransformerFwdInBckwd ||
-      parallelismPolicy == ParallelismPolicy::Transformer) {
+      parallelismPolicy == ParallelismPolicy::Transformer ||
+      parallelismPolicy == ParallelismPolicy::MicroBenchmark) {
         for (size_t i = 1; i < tokens.size(); i = i+1){
           if(tokens[i]=="model_parallel_NPU_group:"){
             model_parallel_npu_group = std::stoi(tokens[i+1]);
@@ -1261,7 +1269,7 @@ bool Workload::initialize_workload(std::string name) {
   if (generator->id == 0) {
       std::cout <<"pp_commize:"<< pp_commsize << std::endl;
   }
-  if(generator->id == 0){
+  if(generator->id == 0 && parallelismPolicy != ParallelismPolicy::MicroBenchmark){
     if (model_parallel_npu_group == 0 || expert_parallel_npu_group == 0 || pipeline_model_parallelism == 0 
         || vpp==0 || GA == 0 || all_gpus == 0 ||(pipeline_model_parallelism !=1 && pp_commsize ==0)||(pipeline_model_parallelism == 1 && pp_commsize !=0)){
           std::cerr << "*****Warining: Input workload format mismatch. It may cause simulation error. Pleased use the latest AICB to generate.*****" << std::endl;

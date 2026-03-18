@@ -68,6 +68,78 @@ To generate workloads for simulation, use the [SimAI-WorkloadGenerator](https://
 
 > 💡 *For more details, refer to the [AICB Workload Tutorial](https://github.com/aliyun/aicb/blob/master/training/tutorial.md#workload)*
 
+## 📝 Workload Format
+
+A workload file has three sections:
+
+1. **Header line** — policy and parallelism parameters
+2. **Count line** — number of layers/operations
+3. **Layer lines** — one per operation, with 12 fields:
+
+```
+<name>  <dep>  <fp_compute>  <fp_comm>  <fp_size>  <ig_compute>  <ig_comm>  <ig_size>  <wg_compute>  <wg_comm>  <wg_size>  <wg_update>
+```
+
+| Field | Description |
+|-------|-------------|
+| `name` | Layer identifier |
+| `dep` | Dependency index (`-1` = no dependency) |
+| `fp_compute` | Forward-pass compute time (ns) |
+| `fp_comm` | Forward-pass collective type (`ALLREDUCE`, `ALLGATHER`, `REDUCESCATTER`, `ALLTOALL`, `NONE`) |
+| `fp_size` | Forward-pass message size (bytes) |
+| `ig_compute` | Input-gradient compute time (ns) |
+| `ig_comm` | Input-gradient collective type |
+| `ig_size` | Input-gradient message size (bytes) |
+| `wg_compute` | Weight-gradient compute time (ns) |
+| `wg_comm` | Weight-gradient collective type |
+| `wg_size` | Weight-gradient message size (bytes) |
+| `wg_update` | Weight-update time (ns) |
+
+### Supported Parallelism Policies
+
+| Policy keyword | Description |
+|----------------|-------------|
+| `HYBRID_TRANSFORMER_FWD_IN_BCKWD` | Standard Transformer training (TP + DP + PP) |
+| `HYBRID_TRANSFORMER` | Transformer without fwd-in-bckwd optimization |
+| `DATA` | Pure data parallelism |
+| `MODEL` | Pure model parallelism |
+| `HYBRID_DATA_MODEL` / `HYBRID_MODEL_DATA` | Mixed parallelism strategies |
+| `MICRO` | **Microbenchmark mode** — simulate standalone collective operations (e.g., allreduce, allgather) across all GPUs |
+
+### MICRO Mode — Simulating Standalone Collectives (e.g., nccl-tests)
+
+Use `MICRO` to benchmark individual collective operations without a full model workload.
+Each layer entry defines one collective operation; all entries are issued together.
+
+**Workload format for MICRO mode:**
+
+```
+MICRO model_parallel_NPU_group: 1 ep: 1 pp: 1 vpp: 1 ga: 1 all_gpus: <N>
+<num_ops>
+<name>  -1  0  NONE  0  0  NONE  0  0  <COMM_TYPE>  <size_bytes>  0
+...
+```
+
+- Set `model_parallel_NPU_group: 1` and `pp: 1` so that the DP group equals `all_gpus` (all GPUs participate in the collective).
+- Put the collective type (`ALLREDUCE`, `ALLGATHER`, etc.) in the **weight-gradient** (`wg_comm`) column.
+- Repeat the layer line for each message size you want to test.
+
+**Example — AllReduce benchmark across 16 GPUs (like nccl-tests):**
+
+```
+MICRO model_parallel_NPU_group: 1 ep: 1 pp: 1 vpp: 1 ga: 1 all_gpus: 16
+5
+allreduce_1mb   -1  0  NONE  0  0  NONE  0  0  ALLREDUCE  1048576   0
+allreduce_2mb   -1  0  NONE  0  0  NONE  0  0  ALLREDUCE  2097152   0
+allreduce_4mb   -1  0  NONE  0  0  NONE  0  0  ALLREDUCE  4194304   0
+allreduce_8mb   -1  0  NONE  0  0  NONE  0  0  ALLREDUCE  8388608   0
+allreduce_16mb  -1  0  NONE  0  0  NONE  0  0  ALLREDUCE  16777216  0
+```
+
+See [workload_micro_allreduce.txt](../example/workload_micro_allreduce.txt) for the ready-to-use file.
+
+> **Tip:** You can also place the collective in the `fp_comm` column (forward-pass) if you want to test TP-group collectives. In that case set `model_parallel_NPU_group` to the group size, e.g., `model_parallel_NPU_group: 8` to run within an 8-GPU TP group.
+
 ## 🔧 Busbw Setting
 
 SimAI-Analytical abstracts lower-level network details by directly specifying busbw to estimate collective communication times. To customize communication busbw for various scenarios, you can use a [busbw.yaml](../example/busbw.yaml) file in the following format:

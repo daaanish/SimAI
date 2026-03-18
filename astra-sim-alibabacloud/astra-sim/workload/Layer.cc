@@ -356,7 +356,10 @@ LayerData Layer::report(
   take_stream_stats_average();
   int TP_size = workload->model_parallel_npu_group;
   int PP_size = workload->pipeline_model_parallelism;
-  int DP_size = workload->all_gpus / (TP_size * PP_size);
+  if (TP_size == 0) TP_size = 1;
+  if (PP_size == 0) PP_size = 1;
+  int all_gpus = workload->all_gpus > 0 ? workload->all_gpus : generator->all_gpus[0];
+  int DP_size = all_gpus / (TP_size * PP_size);
   int EP_size = workload->expert_parallel_npu_group;
   int vpp = workload->vpp;
   uint32_t pp_commsize = workload->pp_commsize;
@@ -566,6 +569,8 @@ LayerData Layer::report(
   int PP_size = workload->pipeline_model_parallelism;
   int vpp = workload->vpp;
   uint32_t pp_commsize = workload->pp_commsize;
+  if (TP_size == 0) TP_size = 1;
+  if (PP_size == 0) PP_size = 1;
   int DP_size = generator->all_gpus[0] / (TP_size * PP_size);
   int GA = workload->GA;
   int EP_size = workload->expert_parallel_npu_group;
@@ -948,6 +953,9 @@ Tick Layer::compute_time(
   UserParam* param = UserParam::getInstance();
   Tick comp_time = 0;
   if (comtype == ComType::None) {
+    return 0;
+  }
+  if (nranks <= 1) {
     return 0;
   }
 
