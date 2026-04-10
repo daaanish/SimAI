@@ -1417,6 +1417,7 @@ std::shared_ptr<void> Sys::generate_flow_model(ParallelStrategy comm_ps, uint64_
         current_state = MockNccl::State::Weight_Gradient;
         break;
       default:
+        std::cerr << "Warning: unhandled LoopState in generate_flow_model, defaulting to Forward_Pass" << std::endl;
         current_state = MockNccl::State::Forward_Pass;
         break;
     }
@@ -1441,7 +1442,7 @@ DataSet* Sys::generate_collective(
   uint64_t chunk_size = determine_chunk_size(size, collective_type);
   if(id == 0) std::cout << "chunk size is: " << chunk_size << " , size is: " << size << " , layer_num is: " << layer_num << " , node: " << id << std::endl;
   uint64_t recommended_chunk_size = chunk_size;
-  int streams = (chunk_size > 0) ? (int)ceil(((double)size) / chunk_size) : 1;
+  int streams = ceil(((double)size) / chunk_size);
   int64_t tmp;
   DataSet* dataset = new DataSet(streams);
   #ifdef PHY_MTP
