@@ -26,9 +26,17 @@
 #include <cstdarg>
 #include <thread>
 
-#define LOG_PATH  "/etc/astra-sim/"
-
 enum class NcclLogLevel { DEBUG, INFO, WARNING,ERROR};
+
+static std::string get_log_path() {
+    const char* home = std::getenv("SIMAI_HOME");
+    if (home) {
+        std::string path(home);
+        if (path.back() != '/') path += '/';
+        return path;
+    }
+    return "./sim_workspace/";
+}
 
 class MockNcclLog {
  private:
@@ -64,7 +72,7 @@ class MockNcclLog {
     return instance;
   }
   static void set_log_name(std::string log_name){
-    LogName = LOG_PATH + log_name;
+    LogName = get_log_path() + log_name;
   }
   void writeLog(NcclLogLevel level, const char* format,...) {
     if (level >= logLevel) {

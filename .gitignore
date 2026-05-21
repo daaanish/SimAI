@@ -4,6 +4,7 @@ astra-sim-alibabacloud/build/astra_ns3/build/
 astra-sim-alibabacloud/extern/
 bin/
 results/
+sim_workspace/
 test/log/
 *.log
 .cur*

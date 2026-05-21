@@ -30,7 +30,12 @@
 #ifdef PHY_RDMA
 #include "astra-sim/system/SimAiFlowModelRdma.hh"
 #endif
-#define RESULT_PATH "/etc/astra-sim/results/ncclFlowModel_"
+static std::string get_result_path() {
+    const char* home = std::getenv("SIMAI_HOME");
+    std::string base = home ? std::string(home) : std::string("./sim_workspace");
+    if (base.back() != '/') base += '/';
+    return base + "results/ncclFlowModel_";
+}
 
 using namespace std;
 
@@ -153,7 +158,7 @@ int main(int argc,char *argv[]){
     1,
     1,
     0,
-    RESULT_PATH,
+    get_result_path(),
     "phynet_test",
     true,
     false,
