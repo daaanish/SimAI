@@ -1,0 +1,26 @@
+diff --git a/README.md b/README.md
+index 22c17c2..b1da87b 100755
+--- a/README.md
++++ b/README.md
+@@ -41,7 +41,7 @@ This major release introduces significant new capabilities, focusing on inferenc
+ - [Access AICB](#access-aicb)
+ - [Latest News](#latest-news)
+ - [Table of Contents](#table-of-contents)
+-- [AICB Overview](#aicb-overview)
++- [AICB Overview](#aicb-overview)`
+   - [Introduction](#introduction)
+   - [The benchmark suite in AICB](#the-benchmark-suite-in-aicb)
+ - [Setup](#setup)
+diff --git a/scripts/megatron_workload_with_aiob.sh b/scripts/megatron_workload_with_aiob.sh
+index 5404ff8..9e57d50 100755
+--- a/scripts/megatron_workload_with_aiob.sh
++++ b/scripts/megatron_workload_with_aiob.sh
+@@ -147,7 +147,7 @@ case $model_size in
+     num_layers=36
+     hidden_size=4096
+     num_attention_heads=32
+-    tensor_model_parallel_size=4
++    # tensor_model_parallel_size=4
+     ;;
+   405)
+     model_name=llama_405B
