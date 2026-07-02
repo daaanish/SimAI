@@ -9,3 +9,5 @@ test/log/
 *.log
 .cur*
 .DS_Store
+*.sif
+compat_env/

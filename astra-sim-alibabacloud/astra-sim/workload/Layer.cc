@@ -950,7 +950,9 @@ Tick Layer::compute_time(
   if (comtype == ComType::None) {
     return 0;
   }
-
+  if (nranks <= 1) {
+      return 0;
+  }
 
     int n_ranks;
     int nnics;

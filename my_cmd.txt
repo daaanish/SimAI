@@ -1,0 +1,50 @@
+cd aicb && apptainer shell --nv   --bind /home/dathar/SimAI/aicb:/workspace/aicb   simai.sif
+
+
+PROFILING
+
+===== WS 2 TP 2 ======
+  Apptainer> sh ./scripts/megatron_workload_with_aiob.sh \
+  -m 7 \
+  --world_size 2 \
+  --tensor_model_parallel_size 2 \
+  --pipeline_model_parallel 1 \
+  --frame Megatron \
+  --global_batch 1024 \
+  --micro_batch 1 \
+  --seq_length 4096 \
+  --gpu_type AIOB_hwprofiling_tp2 \
+  --aiob_enable
+
+
+cd /home/dathar/SimAI
+./bin/SimAI_analytical \
+  -w /home/dathar/SimAI/aicb/results/workload/AIOB_hwprofiling_tp2-gpt_7B-world_size2-tp2-pp1-ep1-gbs1024-mbs1-seq4096-MOE-False-GEMM-False-flash_attn-False.txt \
+  -g 2 -g_p_s 4 -n_p_s 1 \
+  -g_type A100 -nic_t cx7 \
+  -nv 240.0 -nic 48.5 \
+  -r ProfiledFile-gpt7B-tp2
+
+===== WS 4 TP 4 ======
+  Apptainer> sh ./scripts/megatron_workload_with_aiob.sh \
+  -m 7 \
+  --world_size 4 \
+  --tensor_model_parallel_size 4 \
+  --pipeline_model_parallel 1 \
+  --frame Megatron \
+  --global_batch 1024 \
+  --micro_batch 1 \
+  --seq_length 4096 \
+  --gpu_type AIOB_hwprofiling_tp4 \
+  --aiob_enable
+
+
+cd /home/dathar/SimAI
+./bin/SimAI_analytical \
+  -w /home/dathar/SimAI/aicb/results/workload/AIOB_hwprofiling_tp4-gpt_7B-world_size4-tp4-pp1-ep1-gbs1024-mbs1-seq4096-MOE-False-GEMM-False-flash_attn-False.txt \
+  -g 4 -g_p_s 4 -n_p_s 1 \
+  -g_type A100 -nic_t cx7 \
+  -nv 240.0 -nic 48.5 \
+  -r ProfiledFile-gpt7B-tp4
+
+  
